@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Planet {
     sign: string;
@@ -31,6 +32,16 @@ export interface CalculateChartRequest {
     birthLocation: string;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    count?: number;
+    total?: number;
+    page?: number;
+    pages?: number;
+    error?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -40,7 +51,9 @@ export class ChartService {
     constructor(private http: HttpClient) { }
 
     getAllCharts(): Observable<Chart[]> {
-        return this.http.get<Chart[]>(`${this.apiUrl}/charts`);
+        return this.http.get<ApiResponse<Chart[]>>(`${this.apiUrl}/charts`).pipe(
+            map(response => response.success ? response.data : [])
+        );
     }
 
     getChartById(id: number): Observable<Chart> {

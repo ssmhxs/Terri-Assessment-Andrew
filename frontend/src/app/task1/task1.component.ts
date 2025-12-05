@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-// Optional: You can use the ChartService from services/chart.service.ts instead of HttpClient directly
-// import { ChartService, Chart } from '../services/chart.service';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { ChartService } from '../services/chart.service';
+import { ChartCardComponent } from './chart-card.component';
 
 // ⚠️ CRITICAL WARNING: DO NOT USE AI TOOLS
 // This assessment must be completed WITHOUT using AI tools such as Cursor, ChatGPT, 
@@ -51,7 +52,7 @@ interface Chart {
 @Component({
   selector: 'app-task1',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChartCardComponent],
   template: `
     <div class="task1-container">
       <h2>Task 1: Display Astrological Charts</h2>
@@ -60,10 +61,32 @@ interface Chart {
         Implement the component according to the requirements in the code comments.
       </p>
       
-      <!-- TODO: Implement the chart display here -->
-      <div class="placeholder">
-        <p>Your implementation goes here...</p>
-      </div>
+      @if (loading) {
+        <!-- Loading State -->
+        <div class="loading-container">
+          <p>Loading charts...</p>
+        </div>
+      } @else if (error) {
+        <!-- Error State -->
+        <div class="error-container">
+          <div class="error-icon">⚠️</div>
+          <h3>Error Loading Charts</h3>
+          <p>{{ error }}</p>
+          <button (click)="loadCharts()" class="retry-button">Try Again</button>
+        </div>
+      } @else if (charts.length === 0) {
+        <!-- Empty State -->
+        <div class="empty-container">
+          <p>No charts available at the moment.</p>
+        </div>
+      } @else {
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+          @for (chart of charts; track chart.id) {
+            <app-chart-card [chart]="chart"></app-chart-card>
+          }
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -75,22 +98,136 @@ interface Chart {
       color: #666;
       margin-bottom: 2rem;
     }
-    .placeholder {
+
+    /* Loading State */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .loading-container p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    /* Error State */
+    .error-container {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      border-radius: 8px;
+      color: #c53030;
+    }
+
+    .error-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .error-container h3 {
+      margin: 0.5rem 0;
+      color: #c53030;
+    }
+
+    .retry-button {
+      margin-top: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+
+    .retry-button:hover {
+      background: #5568d3;
+    }
+
+    /* Empty State */
+    .empty-container {
       padding: 3rem;
       text-align: center;
       background: #f5f5f5;
       border-radius: 8px;
       color: #999;
     }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .charts-grid app-chart-card {
+      flex: 1 1 320px;
+      min-width: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .charts-grid {
+        gap: 1rem;
+      }
+
+      .charts-grid app-chart-card {
+        flex: 1 1 100%;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+    }
+
+    @media (max-width: 480px) {
+      .task1-container {
+        padding: 0 0.5rem;
+      }
+    }
   `]
 })
 export class Task1Component implements OnInit {
-  // TODO: Add your implementation here
+  charts: Chart[] = [];
+  loading = false;
+  error: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private chartService: ChartService) {}
 
   ngOnInit() {
-    // TODO: Fetch charts from API
+    this.loadCharts();
   }
+
+  loadCharts() {
+    this.loading = true;
+    this.error = null;
+
+    this.chartService.getAllCharts()
+      .pipe(
+        catchError(err => {
+          console.error('Error fetching charts:', err);
+          this.error = err.error?.error || err.message || 'Failed to load charts. Please try again later.';
+          return of([]);
+        })
+      )
+      .subscribe({
+        next: (data) => {
+          this.charts = data;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.loading = false;
+        }
+      });
+  }
+
 }
 
