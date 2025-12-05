@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ChartService } from '../services/chart.service';
-import { ChartCardComponent } from './chart-card.component';
+import { ChartCardComponent } from '../components/chart-card.component';
 
 // ⚠️ CRITICAL WARNING: DO NOT USE AI TOOLS
 // This assessment must be completed WITHOUT using AI tools such as Cursor, ChatGPT, 

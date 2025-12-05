@@ -60,8 +60,10 @@ export class ChartService {
         return this.http.get<Chart>(`${this.apiUrl}/charts/${id}`);
     }
 
-    calculateChart(request: CalculateChartRequest): Observable<Chart> {
-        return this.http.post<Chart>(`${this.apiUrl}/charts/calculate`, request);
+    calculateChart(request: CalculateChartRequest): Observable<Chart | null> {
+        return this.http.post<ApiResponse<Chart>>(`${this.apiUrl}/charts/calculate`, request).pipe(
+            map(response => response.success ? response.data : null)
+        );
     }
 
     initializeProject(): Observable<any> {
